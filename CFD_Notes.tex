@@ -1,0 +1,135 @@
+\documentclass{article}
+\usepackage{ amssymb }
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{graphicx} % Required for inserting images
+
+\title{REU MFD ILP Notes}
+\author{Owen Cool}
+\date{May 2025}
+
+\begin{document}
+
+\maketitle
+
+\textbf{Problem 1} (CFD). Given a vector-valued flow network $G=(V,E,F)$, with $F=(f_1,...,f_m)$ as a tuple of $m$ flows, the CFD (Common Flow Decomposition) problem is to find a set $\mathcal{P}=\{P_1,...,P_k\}$ of paths (with weights $w_j=\{w_{1j},...,w_{kj}\}$ for each flow $f_j$) in $G$ such that, for each flow network $G'=(V,E,f_j), f\in F$, $FD(\mathcal{P},w_j)$ is a flow decomposition of $G'$, and $|\mathcal{P}|$ is minimized. The ILP formulation for this problem is shown in equations (1a) through (1j)
+
+\begin{table}
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{ | m{2.5em} | m{10cm} | }
+         \hline
+         & \\
+         \hline
+         $x_{uvi}$ & Binary variable corresponding to the usage of edge $(u,v)\in E$ in flow path $P_i\in\mathcal{P}$ \\
+         $w_{ij}$ & Integer variable corresponding to the weight of the flow path $P_i\in\mathcal{P}$ for the flow $f_j\in F$\\
+         $\pi_{uvij}$ & Integer variable corresponding to the product of the weight of flow path $P_i\in\mathcal{P}$ for flow $f_j\in F$ and the usage of edge $(u,v)\in E$ in the same flow path\\
+         $\bar{w}$ & Sufficiently large upper bound for any $w_{ij}$, for all $i\in\{1,...,k\}$\\
+         \hline
+    \end{tabular}
+    \caption{Caption}
+    \label{tab:my_label}
+\end{table}
+
+\begin{subequations}
+    \begin{equation}
+        \sum_{(s,v)\in E} x_{svi}=1, \qquad \forall i\in \{1,...,k\},
+    \end{equation}
+    \begin{equation}
+        \sum_{(u,t)\in E} x_{uti}=1, \qquad \forall i\in \{1,...,k\},
+    \end{equation}
+    \begin{equation}
+        \sum_{(u,v)\in E} x_{uvi} -\sum_{(v,w)\in E} x_{vwi}=0, \qquad \forall i\in \{1,...,k\},  
+    \end{equation}
+    \begin{equation}
+        f_{uvj}=\sum_{i\in\{1,...,k\}}\pi_{uvij}, \qquad \forall (u,v)\in E,\ \forall j\in\{1,..,m\},
+    \end{equation}
+    \begin{equation}
+        \pi_{uvij}\leq\bar{w}x_{uvi}, \qquad \forall (u,v)\in E,\ \forall i\in\{1,...,k\},\ \forall j\in\{1,..,m\},
+    \end{equation}
+    \begin{equation}
+        \pi_{uvij}\leq w_{ij}, \qquad \forall (u,v)\in E,\quad i\in\{1,...,k\},\ \forall j\in\{1,..,m\},
+    \end{equation}
+    \begin{equation}
+        \pi_{uvij}\geq w_{ij}-(1-x_{uvi})\bar{w}, \qquad \forall (u,v)\in E,\ \forall i\in\{1,...,k\},\ \forall j\in\{1,..,m\},
+    \end{equation}
+    \begin{equation}
+        w_{ij}\in\mathbb{Z}^+\ \cup\ \{0\}, \qquad \forall i\in\{i,...,k\},\ \forall j\in\{1,...,m\},
+    \end{equation}
+    \begin{equation}
+        x_{uvi}\in\{0,1\}, \qquad \forall (u,v)\in E,\ \forall i\in\{1,...,k\},
+    \end{equation}
+    \begin{equation}
+        \pi_{uvij}\in\mathbb{Z}^+\ \cup\ \{0\}, \qquad \forall (u,v)\in E,\ \forall i\in\{1,...,k\}
+    \end{equation}
+\end{subequations}
+
+\textbf{Problem 2} (CFDSC). Given a vector-valued flow network $G = (V, E, F)$, and a set of subpath constraints $\mathcal{R}=\{R_1,...,R_\ell\}$, the Common Flow Decomposition with Subpath Constraints (CFDSC) problem is to find a Common Flow Decomposition for $G$, where $|\mathcal{P}|$ is minimized and all subpath constraints are satisfied. A subpath constraint is \textbf{satisfied} if $\forall R_p \in \mathcal{R},\  \exists P_i\in \mathcal{P}$ such that $R_p$ is a subpath of $P_i$, and $P_i$ carries some weight for some flow. Another potential formulation of this problem is $\forall R_p \in \mathcal{R},\  \forall f_j\in F, \ \exists P_i\in \mathcal{P}$ such that $w_{ij}>0$. Theoretically, we could have a third formulation in which each flow has its own subpath constraints. This is doable, but unlikely to have real applications (much like the rest of this).
+
+First, we address the single-satisfying-flow formulation of CFDSC. For this, we add a class of binary variables $r_{ip}$, whose value is 1 if subpath constraint $R_p$ is satisfied by path $P_i$, and 0 otherwise. Then, we add the following constraints:
+
+\begin{subequations}
+    \begin{equation}
+        \sum_{i\in \{1,...,k\}}r_{ip}\geq1, \qquad \forall R_p\in \mathcal{R},
+    \end{equation}
+    \begin{equation}
+        \sum_{(u,v)\in R_p}x_{uvi}\geq|R_p|r_{ip}, \qquad \forall i\in\{1,...,k\},\ \forall R_p\in \mathcal{R},
+    \end{equation}
+    \begin{equation}
+        \sum_{j\in\{1,...,m\}}w_{ij}\geq1,\qquad\forall i\in\{1,...,k\}
+    \end{equation}
+\end{subequations}
+
+In the above equations, equation (2a) essentially ensures that for each subpath constraint, some path satisfies it. Equation (2b), meanwhile, ensures that the edges in a given subpath constraint are actually in the path that "claims" to satisfy it. Equation (2c) ensures that every path carries weight for some flow (though not necessarily all flows). This is necessary because a path does not satisfy a subpath constraint if it does not carry weight for any flows.
+
+We now address the formulation of CFDSC in which each constraint is satisfied by all flows. The approach is similar, although the variable $r_{ip}$ must be replaced by $r_{ijp}$, whose value is now 1 if the subpath constraint $R_p$ is satisfied by the path $P_i$ \textbf{for the flow} $f_j$ (i.e. $P_i$ carries flow for $f_j$). Similarly, our equations (2) are changed:
+
+\begin{subequations}
+    \begin{equation}
+        \sum_{i\in\{1,...,k\}}r_{ijp}\geq1,\qquad \forall R_p\in\mathcal{R},\ \forall f_j\in F,
+    \end{equation}
+    \begin{equation}
+        \sum_{(u,v)\in R_p}x_{uvi}\geq|R_p|r_{ijp},\qquad \forall i\{1,...,k\},\ \forall R_p\in\mathcal{R},\ \forall j\in\{1,...,m\},
+    \end{equation}
+    \begin{equation}
+        w_{ij}\geq r_{ijp},\qquad \forall i\in \{1,...,k\},\  \forall f_j\in F, \ \forall R_p\in \mathcal{R}
+    \end{equation}
+\end{subequations}
+
+These equations serve roughly equivalent purposes to those in (2). Equation (3a) ensures that for each path constraint and flow pairing, some path satisfies that path constraint for that flow. Equation (3b) again ensures that the edges in a given subpath constraint are in the path that claims to satisfy it, but does this for every constraint-flow pairing. Equation (3c) ensures that every path which claims to carry weight for a given flow actually carries weight for that flow.
+
+\textbf{Problem 3} (CIFD). Given a "vector-valued inexact flow network" $G=(V,E,\overline{F},\underline{F})$, where $\forall \underline{f_{j}}\in \underline{F},\  \overline{f_j}\in\overline{F},\  \forall(u,v)\in E,\ \underline{f_{uvj}}\leq\overline{f_{uvj}}$, the Common Inexact Flow Decomposition (CIFD) problem is to determine if there exists, and if so, find a minimum size set $\mathcal{P}=\{P_1,...,P_k\}$ of paths (with weights $w_j=\{w_{1j},...,w_{kj}\}$ for each flow $f_j$) in $G$ such that, for each edge $(u,v)\in E$ and flow bounds $\underline{f_j},\ \overline{f_j}$ it holds that:
+
+\begin{equation}
+    \underline{f_{uvj}}\leq\sum_{\substack{i\in\{1,...,k\}\ s.t. \\{(u,v)\in P_i}}}w_{ij}\leq \overline{f_{uvj}}
+\end{equation}
+
+It is fairly simple to edit our original ILP to accommodate inexact flow. We simply replace equation (1d) with the following two constraints:
+
+\begin{subequations}
+    \begin{equation}
+        \underline{f_{uvj}}\leq\sum_{i\in\{1,...,k\}}\pi_{uvij},\qquad\forall(u,v)\in E,\ \forall \underline{f_j}\in \underline{F},
+    \end{equation}
+    \begin{equation}
+        \sum_{i\in\{1,...,k\}}\pi_{uvij}\leq \overline{f_{uvj}},\qquad\forall(u,v)\in E,\ \forall \overline{f_j}\in \overline{F}
+    \end{equation}
+\end{subequations}
+
+\textbf{Problem 4} (Common Imperfect Flow Decomposition with Bounded Error). Given a "vector-valued imperfect flow network" $G = (V,E,F)$, where any $f_j\in F$ does not necessarily satisfy flow conservation, the Common Imperfect Flow Decomposition with Bounded Error problem is to find a set of paths and weights that explain the observed flow while keeping the difference between observed and explained flow below a certain bound for each edge. We give constraints for our ILP to solve this problem below: 
+
+\begin{subequations}
+    \begin{equation}
+        \sum_{i\in \{1,..k\}}\pi_{uvij}\leq f_{uvj}-B,\qquad \forall (u,v) \in E, \forall f_j \in F,
+    \end{equation}
+    \begin{equation}
+        \sum_{i\in\{1,...,k\}}\pi_{uvij}\geq f_{uvj}+B, \qquad \forall(u,v)\in E, \ \forall f_j\in F
+    \end{equation}
+\end{subequations}
+
+\textbf{Problem 5} (Common Imperfect Flow Decomposition with Minimum Total Error). Given a "vector-valued imperfect flow network" $G = (V,E,F)$, where any $f_j\in F$ does not necessarily satisfy flow conservation, the Common Imperfect Flow Decomposition with Minimum Total Error problem is to find a set of paths and weights that explain the observed flow while keeping the overall difference between observed and explained flow to a minimum. To solve this, we add an objective function to our ILP, given below:
+
+\begin{equation}
+    \min(\sum_{f_j\in F}(\sum_{(u,v)\in E}(f_{uvj}-\sum_{i\in{\{1,...,k\}}}\pi_{uvij})^2))
+\end{equation}
+
+\end{document}
